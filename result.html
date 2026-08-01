@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUT 风格偏好调研 · 排名结果</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <h1>排名结果</h1>
+    <p>本批次所有判断聚合结果。Bradley–Terry 模型 + 95% 置信区间。</p>
+  </header>
+
+  <div id="err-banner" class="error-banner" style="display:none"></div>
+
+  <div id="fallback-note" class="error-banner" style="display:none; background: rgba(91,141,239,0.1); border-color: var(--accent); color: var(--accent);">
+    检测到循环偏好（A&gt;B&gt;C&gt;A），已切换到胜者图净胜场排名兜底。
+  </div>
+
+  <div class="result-summary">
+    <div class="stat-card"><div class="label">测试 ID</div><div class="value" id="stat-test">—</div></div>
+    <div class="stat-card"><div class="label">总判断数</div><div class="value" id="stat-total">—</div></div>
+    <div class="stat-card"><div class="label">参与人数</div><div class="value" id="stat-voters">—</div></div>
+    <div class="stat-card"><div class="label">人均对比</div><div class="value" id="stat-avg">—</div></div>
+  </div>
+
+  <h2 class="section-title">Top 10</h2>
+  <div id="top10-grid" class="top10-grid"></div>
+
+  <h2 class="section-title">其余分档</h2>
+  <div id="tiers" class="tiers"></div>
+
+  <div class="export-bar">
+    <button id="btn-export-csv" class="btn">导出判断 CSV</button>
+    <button id="btn-export-json" class="btn">导出排名 JSON</button>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/ranking.js"></script>
+<script src="js/result.js"></script>
+</body>
+</html>

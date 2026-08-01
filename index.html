@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0f0f12">
+<title>LUT 风格偏好调研</title>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="preload" as="image" href="renders/portrait/l01.jpg">
+</head>
+<body>
+<div class="app">
+
+  <!-- 顶部：标题与说明 -->
+  <header class="header">
+    <h1 id="hdr-title">LUT 风格偏好调研</h1>
+    <p id="hdr-subtitle">每次会看到同一张照片套了两种不同风格，请选更喜欢的那张。预计 3 分钟。</p>
+  </header>
+
+  <!-- 进度条 -->
+  <div class="progress">
+    <span class="progress-text">第 1 / 20 次</span>
+    <div class="progress-bar"><div class="progress-bar-fill" style="width:5%"></div></div>
+  </div>
+
+  <!-- 对比视图 -->
+  <main id="compare-view">
+    <div class="compare">
+      <button class="compare-side left" aria-label="选择左侧">
+        <div class="placeholder">加载中…</div>
+        <img alt="" loading="eager" decoding="async">
+      </button>
+      <button class="compare-side right" aria-label="选择右侧">
+        <div class="placeholder">加载中…</div>
+        <img alt="" loading="eager" decoding="async">
+      </button>
+    </div>
+    <div class="compare-actions">
+      <button class="btn btn-tie">都不喜欢</button>
+      <button class="btn btn-skip">跳过 →</button>
+    </div>
+  </main>
+
+  <!-- 致谢页 -->
+  <div id="done-view" class="done" style="display:none">
+    <h2>感谢你的参与 🎉</h2>
+    <p>已完成 <span id="done-count">0</span> 次对比。你的判断已提交。</p>
+    <button class="btn btn-restart">再做一轮</button>
+  </div>
+
+</div>
+
+<!-- 脚本顺序：config → supabase → ranking → app -->
+<script src="js/config.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/ranking.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+// 标题/副标题从 config 注入
+document.getElementById('hdr-title').textContent = LRT_CONFIG.title;
+document.getElementById('hdr-subtitle').textContent = LRT_CONFIG.subtitle;
+document.querySelector('.progress-text').textContent = `第 1 / ${LRT_CONFIG.comparisonsPerVoter} 次`;
+</script>
+</body>
+</html>
