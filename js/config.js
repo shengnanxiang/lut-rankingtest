@@ -70,7 +70,7 @@ window.LRT_CONFIG = {
   // Supabase：URL + anon key（anon key 可公开；写入受 RLS 限制）
   // 后续如需轮换，直接改这里
   supabase: {
-    url: 'https://mulknokuzmbqycdfkvyh.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11bGtub2t1em1icXljZGZrdnloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MzAxNDYsImV4cCI6MjEwMTEwNjE0Nn0.HiuqzcS-_5b4iSnvg4OSWXIaA3Vru6bp912vQYWs-cU'
+    url: 'https://tdvhftiincchvtgnkbzh.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmhmdGlpbmNjaHZ0Z25rYnpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1ODM3OTQsImV4cCI6MjEwMTE1OTc5NH0.tJq-bUcR7EB2pSCrbp3T_8NetOICeGIAhTH4IK7uyog'
   }
 };
