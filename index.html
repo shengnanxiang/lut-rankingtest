@@ -2,9 +2,9 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f0f12">
-<title>LUT 风格偏好调研</title>
+<title>风格比较测试</title>
 <link rel="stylesheet" href="css/styles.css">
 <link rel="preload" as="image" href="renders/portrait/l01.jpg">
 </head>
@@ -13,8 +13,8 @@
 
   <!-- 顶部：标题与说明 -->
   <header class="header">
-    <h1 id="hdr-title">LUT 风格偏好调研</h1>
-    <p id="hdr-subtitle">每次会看到同一张照片套了两种不同风格，请选更喜欢的那张。预计 3 分钟。</p>
+    <h1 id="hdr-title">风格比较测试</h1>
+    <p id="hdr-subtitle">请选择您更喜欢的图片。预计共 3 分钟。</p>
   </header>
 
   <!-- 进度条 -->
@@ -45,7 +45,10 @@
   <div id="done-view" class="done" style="display:none">
     <h2>感谢你的参与 🎉</h2>
     <p>已完成 <span id="done-count">0</span> 次对比。你的判断已提交。</p>
-    <button class="btn btn-restart">再做一轮</button>
+    <div class="done-actions">
+      <a class="btn btn-result" href="result.html">查看排名结果 →</a>
+      <button class="btn btn-restart">再做一轮</button>
+    </div>
   </div>
 
 </div>

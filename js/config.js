@@ -8,8 +8,8 @@ window.LRT_CONFIG = {
   testId: 'v1-2025-Q3',
 
   // 批次标题（页面顶部展示）
-  title: 'LUT 风格偏好调研 · 第一轮',
-  subtitle: '每次会看到同一张照片套了两种不同风格，请选更喜欢的那张。预计 3 分钟。',
+  title: '风格比较测试',
+  subtitle: '请选择您更喜欢的图片。预计共 3 分钟。',
 
   // 每位参与者对比次数上限（PRD 默认 20）
   comparisonsPerVoter: 20,

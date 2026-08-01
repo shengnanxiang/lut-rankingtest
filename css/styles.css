@@ -1,5 +1,5 @@
 /* ================================================================
-   LUT 偏好排序测试 · 样式
+   LUT 偏好排序测试 · 样式（自适应：手机不滚动，桌面大屏最大化）
    ================================================================ */
 
 :root {
@@ -12,6 +12,9 @@
   --accent-hover: #7aa3ff;
   --danger: #e85b5b;
   --radius: 12px;
+  /* 顶部 header + 进度条 + 底部按钮的预留高度，由布局自动分配，这里只作安全间距参考 */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,29 +26,40 @@ html, body {
                'Microsoft YaHei', 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
   line-height: 1.5;
-  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
+/* 占满整屏，用 dvh 适配移动端地址栏伸缩；老浏览器回退 vh */
+html, body { height: 100vh; height: 100dvh; }
+
+body {
+  overflow: hidden; /* 整页不滚动，全部内容适配一屏 */
+}
+
+/* 主容器：纵向 flex，占满视口，各区块按可用空间分配 */
 .app {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 24px 20px 80px;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: calc(16px + var(--safe-top)) 20px calc(16px + var(--safe-bottom));
+  gap: 16px;
 }
 
 /* ---------- 顶部 ---------- */
 .header {
   text-align: center;
-  margin-bottom: 28px;
+  flex: 0 0 auto;
 }
 .header h1 {
-  font-size: 22px;
+  font-size: clamp(18px, 2.2vw, 24px);
   font-weight: 600;
   margin-bottom: 6px;
 }
 .header p {
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: clamp(13px, 1.4vw, 15px);
 }
 
 /* ---------- 进度条 ---------- */
@@ -53,7 +67,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 24px;
+  flex: 0 0 auto;
   font-size: 14px;
   color: var(--text-dim);
 }
@@ -70,16 +84,18 @@ html, body {
   transition: width 0.3s ease;
 }
 
-/* ---------- 对比区（核心） ---------- */
+/* ---------- 对比区（核心，撑满剩余高度） ---------- */
 .compare {
+  flex: 1 1 auto;
+  min-height: 0;            /* 允许 flex 子项收缩，否则会撑破容器导致滚动 */
   display: grid;
+  grid-template-rows: 1fr;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-bottom: 16px;
 }
 .compare-side {
   position: relative;
-  aspect-ratio: 3 / 2;
+  min-height: 0;            /* 关键：让图片在限高容器内被 object-fit 裁切 */
   background: var(--surface);
   border: 2px solid transparent;
   border-radius: var(--radius);
@@ -87,6 +103,7 @@ html, body {
   cursor: pointer;
   transition: border-color 0.15s ease, transform 0.1s ease;
   outline: none;
+  padding: 0;
 }
 .compare-side:focus-visible,
 .compare-side:hover {
@@ -98,7 +115,7 @@ html, body {
 .compare-side img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover;        /* 限高容器内填满并裁切，避免溢出 */
   display: block;
   background: var(--surface);
 }
@@ -113,11 +130,13 @@ html, body {
 }
 .compare-side.loaded .placeholder { display: none; }
 
+/* 底部操作：始终贴底可见，flex 0 0 auto 不参与拉伸 */
 .compare-actions {
+  flex: 0 0 auto;
   display: flex;
   gap: 8px;
   justify-content: center;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 .btn {
   appearance: none;
@@ -129,6 +148,8 @@ html, body {
   font-size: 14px;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
+  text-decoration: none;
+  display: inline-block;
 }
 .btn:hover { background: var(--border); border-color: var(--accent); }
 .btn-tie { color: var(--text-dim); }
@@ -136,19 +157,29 @@ html, body {
 
 /* ---------- 致谢页 ---------- */
 .done {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 60px 20px;
+  gap: 16px;
 }
 .done h2 {
   font-size: 24px;
-  margin-bottom: 12px;
+  font-weight: 600;
 }
 .done p {
   color: var(--text-dim);
-  margin-bottom: 24px;
+}
+.done-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-/* ---------- 结果页 ---------- */
+/* ---------- 结果页（不受影响，保持原样） ---------- */
 .result-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -220,21 +251,16 @@ html, body {
   font-size: 13px;
 }
 
-.export-bar {
-  display: flex;
-  gap: 8px;
-  margin-top: 24px;
-}
-
-/* ---------- 移动端 ---------- */
+/* ---------- 移动端（竖屏窄屏）：两张图上下排，仍在一屏内 ---------- */
 @media (max-width: 720px) {
+  .app { padding: calc(12px + var(--safe-top)) 12px calc(12px + var(--safe-bottom)); gap: 12px; }
+  .header h1 { font-size: 18px; }
+  .header p { font-size: 13px; }
   .compare {
     grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;   /* 上下平分高度 */
     gap: 8px;
   }
-  .compare-side { aspect-ratio: 3 / 2; }
-  .app { padding: 16px 12px 60px; }
-  .header h1 { font-size: 18px; }
 }
 
 /* ---------- 错误状态 ---------- */
