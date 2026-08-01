@@ -91,6 +91,10 @@ def parse_cube(path):
     if max(flat) > 1.5:
         flat = [v / 255.0 for v in flat]
     arr = np.asarray(flat, dtype=np.float32).reshape(size, size, size, 3)
+    # .cube 文件数据排列为 Blue 最快变化、Red 最慢，但 numpy reshape 默认按
+    # (R,G,B) 轴填充。交换 R(0) 与 B(2) 轴，使 lut[r,g,b,ch] 正确对应输入 (R,G,B)，
+    # 否则会出现红蓝通道互换、整体偏蓝的问题。
+    arr = arr.transpose(2, 1, 0, 3)
     return size, arr
 
 # ----------- 渲染（向量化三线性插值） -----------
