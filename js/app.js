@@ -119,6 +119,7 @@
     $rightImg().src = lb.src;
     $leftSide().classList.add('loaded');
     $rightSide().classList.add('loaded');
+    state.submitting = false;   // ③ 新图就绪后解锁，允许下一次选择
 
     state.currentPair = [a, b];
     state.currentPhoto = photo;
@@ -147,6 +148,8 @@
 
   async function submitChoice(side /* 'left' | 'right' | 'tie' */) {
     if (!state.currentPair) return;
+    if (state.submitting) return;     // ③ 防重入：touchstart+click 双触发或快速连点时不跳两题
+    state.submitting = true;
     const [a, b] = state.currentPair;
     const leftIsA = state.currentLeftIsA;
     let winner;
@@ -225,10 +228,20 @@
   // ---------- 初始化 ----------
   async function init() {
     // 绑定按钮
-    $leftSide().addEventListener('click', () => submitChoice('left'));
-    $rightSide().addEventListener('click', () => submitChoice('right'));
+    // ② 移动端微信 X5：用 touchstart 即时响应，preventDefault 阻止其后再触发 click（避免双跳）
+    function bindSide(el, side) {
+      el.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        submitChoice(side);
+      }, { passive: false });
+      el.addEventListener('click', () => submitChoice(side)); // 桌面端兜底
+    }
+    bindSide($leftSide(), 'left');
+    bindSide($rightSide(), 'right');
     document.querySelector('.btn-tie').addEventListener('click', () => submitChoice('tie'));
     document.querySelector('.btn-skip').addEventListener('click', () => {
+      if (state.submitting) return;       // 防重入
+      state.submitting = true;
       // 必须把跳过的对写进 history，否则 pickNextPair 会立刻again选中同一对
       // （它是「分差最小 + 出场最少」的最优解），用户会卡在同一屏反复跳过。
       if (state.currentPair) {

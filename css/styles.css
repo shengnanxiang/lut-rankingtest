@@ -92,6 +92,7 @@ body {
   grid-template-rows: 1fr;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  touch-action: manipulation;   /* ④ 减少点击延迟，禁用双指缩放手势干扰 */
 }
 .compare-side {
   position: relative;
@@ -118,6 +119,11 @@ body {
   object-fit: cover;        /* 限高容器内填满并裁切，避免溢出 */
   display: block;
   background: var(--surface);
+  /* ① 微信 X5 内核：禁用图片拖拽/长按菜单，点击直接落到 button 上，避免"乱跳" */
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 .compare-side .placeholder {
   position: absolute;
