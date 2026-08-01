@@ -59,32 +59,22 @@
     return `renders/${photoId}/${sub}${lutId}.jpg`;
   }
 
-  // 预热：把所有 sm 图塞进浏览器缓存（一次 160 个并发请求，限速 6 并发）
-  async function prefetchAllSm() {
-    const tasks = [];
-    for (const p of photoIds) {
-      for (const l of lutIds) {
-        tasks.push(() => new Promise(res => {
-          const img = new Image();
-          img.onload = img.onerror = () => res();
-          img.src = urlFor(l, p, 'sm');
-        }));
+  // 只预热接下来 1~2 对的 sm 图（全部照片版本）：避免一次性灌 160 张抢占首屏带宽，
+  // 又保证切到下一题时图片已在缓存里，瞬时显示。pickNextPair 是纯函数，可安全预览。
+  function warmNextSm(count = 2) {
+    for (let k = 0; k < count; k++) {
+      const pair = window.LRT_RANKING.pickNextPair(state.elo, lutIds, state.history);
+      if (!pair) break;
+      const [a, b] = pair;
+      for (const photo of photoIds) {
+        [urlFor(a, photo, 'sm'), urlFor(b, photo, 'sm')].forEach(u => {
+          const im = new Image(); im.src = u;
+        });
       }
     }
-    // 简单并发 6
-    const concurrency = 6;
-    let i = 0;
-    async function worker() {
-      while (i < tasks.length) {
-        const t = tasks[i++];
-        await t();
-      }
-    }
-    await Promise.all(Array.from({length: concurrency}, worker));
-    console.log('[lrt] sm 图预热完成');
   }
 
-  // 等两张 lg 图加载完
+  // 等两张 sm 图加载完（sm 仅 ~18KB，几乎瞬时，不阻塞点击）
   function loadImage(src) {
     return new Promise(res => {
       const img = new Image();
@@ -96,8 +86,8 @@
 
   async function preloadPair(photoId, lutA, lutB) {
     const [la, lb] = await Promise.all([
-      loadImage(urlFor(lutA, photoId, 'lg')),
-      loadImage(urlFor(lutB, photoId, 'lg'))
+      loadImage(urlFor(lutA, photoId, 'sm')),
+      loadImage(urlFor(lutB, photoId, 'sm'))
     ]);
     return { la, lb };
   }
@@ -135,18 +125,23 @@
     state.currentLeftIsA = leftIsA;
     state.pairShownTs = Date.now();
 
-    // 预取下一对的 sm 图
-    prefetchNextPairSm();
+    // 预取接下来 1~2 对的 sm 图（用 peek，不消费真实顺序）
+    warmNextSm(2);
     updateProgress();
   }
 
-  function prefetchNextPairSm() {
-    const pair = window.LRT_RANKING.pickNextPair(state.elo, lutIds, state.history);
-    if (!pair) return;
-    const [a, b] = pair;
-    const photo = photoIds[Math.floor(Math.random() * photoIds.length)];
-    [urlFor(a, photo, 'sm'), urlFor(b, photo, 'sm')].forEach(u => {
-      const im = new Image(); im.src = u;
+  // 用户点选后，后台把当前显示的 sm 静默换成 lg 原图（用于存档/结果页），不阻塞交互
+  function upgradeCurrentToLg() {
+    const [a, b] = state.currentPair;
+    if (!a || !b) return;
+    const photo = state.currentPhoto;
+    const lgA = urlFor(a, photo, 'lg');
+    const lgB = urlFor(b, photo, 'lg');
+    [$leftImg(), $rightImg()].forEach(img => {
+      if (!img || !img.src) return;
+      const im = new Image();
+      im.onload = () => { img.src = im.src; };
+      im.src = (img === $leftImg()) ? lgA : lgB;
     });
   }
 
@@ -189,6 +184,9 @@
 
     // 异步入库（不阻塞 UI）
     window.LRT_SUPABASE.insertJudgment(record).catch(e => console.warn(e));
+
+    // 方案 A：点选后静默把当前 sm 换成 lg 原图（不阻塞，下一对会重置 src）
+    upgradeCurrentToLg();
 
     // 防快速乱点：< 250ms 不计
     if (respMs < 250) {
@@ -251,9 +249,8 @@
       else if (e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); submitChoice('tie'); }
     });
 
-    // 异步预热 + 启动首对
+    // 启动首对（对比图已是 sm，瞬时显示；下一对 sm 在 startNewPair 内预热）
     updateProgress();
-    prefetchAllSm().catch(() => {});
     await startNewPair();
   }
 
