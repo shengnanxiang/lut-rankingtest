@@ -5,7 +5,7 @@
 
 window.LRT_CONFIG = {
   // 当前批次 ID，决定 Supabase 存储与查询隔离
-  testId: 'v1-2025-Q3',
+  testId: 'v1-2025-Q4',
 
   // 批次标题（页面顶部展示）
   title: '风格比较测试',
