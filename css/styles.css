@@ -47,6 +47,16 @@ body {
   gap: 16px;
 }
 
+/* 结果页：内容超出一屏，允许整页滚动查看（覆盖测试页的 overflow:hidden/100dvh 锁） */
+body.result-page {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+body.result-page .app {
+  height: auto;
+  min-height: 100dvh;
+}
+
 /* ---------- 顶部 ---------- */
 .header {
   text-align: center;
