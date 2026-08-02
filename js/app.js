@@ -35,7 +35,8 @@
     currentPair: null,      // [lutA, lutB]
     currentPhoto: null,
     currentLeftIsA: null,   // true: 左=A；false: 左=B
-    pairShownTs: 0
+    pairShownTs: 0,
+    gen: 0                   // 代次：每次展示新对 +1，所有延迟回调据此判断是否已过期
   };
 
   // 用历史重建 Elo，让自适应配对从上轮的认知继续，而不是从 1500 重来
@@ -84,17 +85,22 @@
     });
   }
 
-  async function preloadPair(photoId, lutA, lutB) {
+  async function preloadPair(photoId, lutA, lutB, gen) {
     const [la, lb] = await Promise.all([
       loadImage(urlFor(lutA, photoId, 'sm')),
       loadImage(urlFor(lutB, photoId, 'sm'))
     ]);
+    // 若期间已开始新一轮（代次过期），丢弃这批 sm，避免错乱覆盖
+    if (state.gen !== gen) return null;
     return { la, lb };
   }
 
   // ---------- 流程 ----------
   async function startNewPair() {
     if (state.pairIdx >= cfg.comparisonsPerVoter) return finish();
+
+    // 代次 +1：任何上一对遗留的异步回调（lg 升级 / 预加载）若再触发一律作废
+    const gen = ++state.gen;
 
     const pair = window.LRT_RANKING.pickNextPair(state.elo, lutIds, state.history);
     if (!pair) return finish();
@@ -107,7 +113,12 @@
     $rightSide().classList.remove('loaded');
 
     // 预加载 lg
-    const { la, lb } = await preloadPair(photo, a, b);
+    const pre = await preloadPair(photo, a, b, gen);
+    if (!pre) {
+      // 代次已过期（用户极快连点，期间又开了新对）——不在此渲染，交由那一轮负责
+      return;
+    }
+    const { la, lb } = pre;
     if (!la || !lb) {
       console.error('图片加载失败', { photo, a, b });
       // 跳过该对
@@ -132,7 +143,7 @@
   }
 
   // 用户点选后，后台把当前显示的 sm 静默换成 lg 原图（用于存档/结果页），不阻塞交互
-  function upgradeCurrentToLg() {
+  function upgradeCurrentToLg(gen) {
     const [a, b] = state.currentPair;
     if (!a || !b) return;
     const photo = state.currentPhoto;
@@ -141,8 +152,13 @@
     [$leftImg(), $rightImg()].forEach(img => {
       if (!img || !img.src) return;
       const im = new Image();
-      im.onload = () => { img.src = im.src; };
-      im.src = (img === $leftImg()) ? lgA : lgB;
+      const target = (img === $leftImg()) ? lgA : lgB;
+      im.onload = () => {
+        // 代次过期说明已经进入下一对，绝不能再覆盖新图的 src
+        if (state.gen !== gen) return;
+        if (img.src.indexOf(target) === -1) img.src = im.src;
+      };
+      im.src = target;
     });
   }
 
@@ -150,6 +166,7 @@
     if (!state.currentPair) return;
     if (state.submitting) return;     // ③ 防重入：touchstart+click 双触发或快速连点时不跳两题
     state.submitting = true;
+    const gen = state.gen;            // 捕获当前代次，供 lg 升级回调判断过期
     const [a, b] = state.currentPair;
     const leftIsA = state.currentLeftIsA;
     let winner;
@@ -189,7 +206,7 @@
     window.LRT_SUPABASE.insertJudgment(record).catch(e => console.warn(e));
 
     // 方案 A：点选后静默把当前 sm 换成 lg 原图（不阻塞，下一对会重置 src）
-    upgradeCurrentToLg();
+    upgradeCurrentToLg(gen);
 
     // 防快速乱点：< 250ms 不计
     if (respMs < 250) {
