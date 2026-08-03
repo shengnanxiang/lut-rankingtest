@@ -91,14 +91,13 @@
     const all = [];
     let from = 0;
     while (true) {
-      const query = `test_id=eq.${encodeURIComponent(testId)}&select=*&order=created_at&limit=${PAGE}`;
+      const query = `test_id=eq.${encodeURIComponent(testId)}&select=*&order=ts.asc`;
       const url = `${cfg.url}/rest/v1/judgments?${query}`;
       const r = await fetch(url, {
         headers: {
           'apikey': cfg.anonKey,
           'Authorization': `Bearer ${cfg.anonKey}`,
-          'Range': `${from}-${from + PAGE - 1}`,
-          'Prefer': 'count=exact'
+          'Range': `${from}-${from + PAGE - 1}`
         }
       });
       if (!r.ok) throw new Error(`Supabase GET judgments ${r.status}`);
