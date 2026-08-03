@@ -71,15 +71,15 @@
   }
 
   // ---------- 离线 Bradley–Terry（MM 算法） ----------
-  // 输入：{ a: { wins, losses } }   输出：strength 值（越大越强）
-  function bradleyTerry(counts, maxIter = 200, tol = 1e-6) {
+  // counts: { a: { wins, losses } }   pairCounts: { a|b: n }  输出：strength 值（越大越强）
+  function bradleyTerry(counts, pairCounts, maxIter = 200, tol = 1e-6) {
     const ids = Object.keys(counts);
     const N = ids.length;
     if (N === 0) return {};
     // 初始强度全 1
     let pi = {};
     ids.forEach(id => pi[id] = 1);
-    // 总胜场（防止全 0 死循环）
+    // 总胜场
     const totalWins = {};
     ids.forEach(id => totalWins[id] = counts[id].wins);
     for (let it = 0; it < maxIter; it++) {
@@ -90,7 +90,11 @@
         let denom = 0;
         for (const j of ids) {
           if (i === j) continue;
-          denom += (counts[i].wins + counts[i].losses) / (pi[i] + pi[j]);
+          // 正确用 i/j 两两之间的对阵次数 n_ij，而非 i 的总对阵次数
+          const pk = i < j ? `${i}|${j}` : `${j}|${i}`;
+          const pairN = (pairCounts[pk] || 0);
+          if (pairN === 0) continue; // 从未对阵，跳过
+          denom += pairN / (pi[i] + pi[j]);
         }
         if (denom === 0) { newPi[i] = pi[i]; continue; }
         newPi[i] = numer / denom;
@@ -130,6 +134,7 @@
   // ---------- 聚合：把 judgments 数组转 counts ----------
   function aggregate(judgments, lutIds) {
     const counts = {};
+    const pairCounts = {};  // n_ij: 每对风格之间的对阵次数，key=min|max
     lutIds.forEach(id => counts[id] = { wins: 0, losses: 0, ties: 0, n: 0 });
     const seen = new Set();
     for (const j of judgments) {
@@ -140,6 +145,9 @@
       const a = j.lut_a, b = j.lut_b, w = j.winner;
       counts[a].n++;
       counts[b].n++;
+      // 记录每对风格的对阵次数
+      const pk = a < b ? `${a}|${b}` : `${b}|${a}`;
+      pairCounts[pk] = (pairCounts[pk] || 0) + 1;
       if (w === 'tie') {
         counts[a].ties++;
         counts[b].ties++;
@@ -151,13 +159,13 @@
         counts[a].losses++;
       }
     }
-    return counts;
+    return { counts, pairCounts };
   }
 
   // ---------- 主入口：算 Top10 + 5/5/6/6 + 置信区间 ----------
   function rank(judgments, lutIds, rankingCfg) {
-    const counts = aggregate(judgments, lutIds);
-    let pi = bradleyTerry(counts);
+    const { counts, pairCounts } = aggregate(judgments, lutIds);
+    let pi = bradleyTerry(counts, pairCounts);
     // 检查循环：若 BT 迭代里出现 ±∞/NaN 视作失败 → 用净胜场
     let ok = true;
     for (const id of lutIds) {
