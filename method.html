@@ -186,13 +186,13 @@
 <div class="container">
 
   <div class="hero">
-    <h1>风格排名方法说明</h1>
-    <p>32 个照片风格滤镜的视觉偏好排名——背后的实验设计、统计模型与算法细节。</p>
+    <h1>排名方法说明</h1>
+    <p>风格偏好排名的实验设计、统计模型与算法细节。</p>
     <div class="badge-row">
       <span class="badge">Pairwise Comparison</span>
       <span class="badge">Bradley&ndash;Terry Model</span>
       <span class="badge">32 Styles</span>
-      <span class="badge">~2763 Judgments</span>
+      <span class="badge" id="judgment-badge">加载中…</span>
     </div>
   </div>
 
@@ -339,6 +339,36 @@ N  =  384 × 32 / 2       ≈  <span class="hl">6,144</span>  <span class="cmt">
   </footer>
 
 </div>
+
+<script src="js/config.js"></script>
+<script>
+(async function() {
+  const badge = document.getElementById('judgment-badge');
+  try {
+    const cfg = window.LRT_CONFIG;
+    const testId = cfg.testId;
+    const url = `${cfg.supabase.url}/rest/v1/judgments?test_id=eq.${encodeURIComponent(testId)}&select=id&limit=1`;
+    const r = await fetch(url, {
+      headers: {
+        'apikey': cfg.supabase.anonKey,
+        'Authorization': `Bearer ${cfg.supabase.anonKey}`,
+        'Prefer': 'count=exact'
+      }
+    });
+    if (!r.ok) throw new Error('fetch failed');
+    const range = r.headers.get('content-range');
+    const m = range ? range.match(/\/(\d+)$/) : null;
+    const count = m ? parseInt(m[1]) : null;
+    if (count) {
+      badge.textContent = count.toLocaleString() + ' Judgments';
+    } else {
+      badge.textContent = '~2763 Judgments';
+    }
+  } catch (_) {
+    badge.textContent = '~2763 Judgments';
+  }
+})();
+</script>
 
 </body>
 </html>
