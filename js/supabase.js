@@ -47,15 +47,6 @@
     return true;
   }
 
-  async function get(table, query) {
-    const url = `${cfg.url}/rest/v1/${table}?${query}`;
-    const r = await fetch(url, {
-      headers: { 'apikey': cfg.anonKey, 'Authorization': `Bearer ${cfg.anonKey}` }
-    });
-    if (!r.ok) throw new Error(`Supabase GET ${table} ${r.status}`);
-    return r.json();
-  }
-
   async function insertJudgment(rec) {
     try {
       const res = await post('judgments', rec);
@@ -94,8 +85,30 @@
   }
 
   // 拉取某个 test 的所有判断（结果页用）
+  // Supabase REST 默认单页上限 1000 行，需分页（Range 头）拉全，否则总判断数会卡在 1000
   async function fetchJudgments(testId) {
-    return get('judgments', `test_id=eq.${encodeURIComponent(testId)}&select=*`);
+    const PAGE = 1000;
+    const all = [];
+    let from = 0;
+    while (true) {
+      const query = `test_id=eq.${encodeURIComponent(testId)}&select=*&order=created_at&limit=${PAGE}`;
+      const url = `${cfg.url}/rest/v1/judgments?${query}`;
+      const r = await fetch(url, {
+        headers: {
+          'apikey': cfg.anonKey,
+          'Authorization': `Bearer ${cfg.anonKey}`,
+          'Range': `${from}-${from + PAGE - 1}`,
+          'Prefer': 'count=exact'
+        }
+      });
+      if (!r.ok) throw new Error(`Supabase GET judgments ${r.status}`);
+      const rows = await r.json();
+      if (!Array.isArray(rows) || rows.length === 0) break;
+      all.push(...rows);
+      if (rows.length < PAGE) break; // 最后一页
+      from += PAGE;
+    }
+    return all;
   }
 
   // 匿名 voter_id：首次进入生成 + 存 localStorage
