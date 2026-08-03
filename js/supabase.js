@@ -98,7 +98,7 @@
   // 与 lutstyles 站 editor 的分页逻辑保持一致，确保两边排名基于同一份全量数据
   async function fetchJudgments(testId) {
     const PAGE = 1000;
-    const all = [];
+    let all = [];
     let offset = 0;
     while (true) {
       const rows = await get('judgments',
