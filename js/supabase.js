@@ -84,28 +84,29 @@
     return flushed;
   }
 
+  async function get(table, query) {
+    const url = `${cfg.url}/rest/v1/${table}?${query}`;
+    const r = await fetch(url, {
+      headers: { 'apikey': cfg.anonKey, 'Authorization': `Bearer ${cfg.anonKey}` }
+    });
+    if (!r.ok) throw new Error(`Supabase GET ${table} ${r.status}`);
+    return r.json();
+  }
+
   // 拉取某个 test 的所有判断（结果页用）
-  // Supabase REST 默认单页上限 1000 行，需分页（Range 头）拉全，否则总判断数会卡在 1000
+  // Supabase REST 默认单页上限 1000 行，需用 limit+offset 分页拉全，否则总判断数会卡在 1000
+  // 与 lutstyles 站 editor 的分页逻辑保持一致，确保两边排名基于同一份全量数据
   async function fetchJudgments(testId) {
     const PAGE = 1000;
     const all = [];
-    let from = 0;
+    let offset = 0;
     while (true) {
-      const query = `test_id=eq.${encodeURIComponent(testId)}&select=*&order=ts.asc`;
-      const url = `${cfg.url}/rest/v1/judgments?${query}`;
-      const r = await fetch(url, {
-        headers: {
-          'apikey': cfg.anonKey,
-          'Authorization': `Bearer ${cfg.anonKey}`,
-          'Range': `${from}-${from + PAGE - 1}`
-        }
-      });
-      if (!r.ok) throw new Error(`Supabase GET judgments ${r.status}`);
-      const rows = await r.json();
+      const rows = await get('judgments',
+        `test_id=eq.${encodeURIComponent(testId)}&select=*&order=ts.asc&limit=${PAGE}&offset=${offset}`);
       if (!Array.isArray(rows) || rows.length === 0) break;
-      all.push(...rows);
+      all = all.concat(rows);
       if (rows.length < PAGE) break; // 最后一页
-      from += PAGE;
+      offset += rows.length;
     }
     return all;
   }
