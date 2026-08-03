@@ -379,6 +379,40 @@ body.result-page .app {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
+
+/* ---------- 导出栏 ---------- */
+.export-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* ---------- 样本量表格溢出保护 ---------- */
+.sample-size { overflow-x: auto; }
+
+/* ---------- 结果页移动端 ---------- */
+@media (max-width: 640px) {
+  .result-summary {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  .stat-card { padding: 12px; }
+  .stat-card .value { font-size: 18px; }
+  .section-title { font-size: 16px; margin: 24px 0 12px; }
+  .top10-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+  .top10-cell { padding: 10px; }
+  .top10-cell .name { font-size: 13px; }
+  .tier-chip { font-size: 12px; padding: 3px 8px; }
+  .ss-table { font-size: 12px; }
+  .ss-table th, .ss-table td { padding: 4px 6px; }
+  .btn { padding: 8px 14px; font-size: 13px; }
+  .error-banner { font-size: 13px; padding: 10px 12px; }
+}
+
 @media (max-width: 720px) {
   .bal-name { flex-basis: 96px; }
 }

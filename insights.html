@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>数据洞察</title>
+<style>
+  :root {
+    --bg: #f5f5f5;
+    --card: #fff;
+    --text: #222;
+    --muted: #666;
+    --accent: #2563eb;
+    --film: #d97706;
+    --warm: #e96b4a;
+    --cool: #2563eb;
+    --bw: #555;
+    --cine: #7c3aed;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111; --card:#1a1a1a; --text:#eee; --muted:#999; --accent:#60a5fa; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 15px/1.6 system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+  a { color: var(--accent); text-decoration: none; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  h1 { font-size: 1.8rem; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); margin-bottom: 28px; font-size: .95rem; }
+
+  /* Badge strip */
+  .badges { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 20px; font-size: .85rem; font-weight: 600;
+    background: var(--card); border: 1px solid #e0e0e0;
+  }
+  .badge .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Section */
+  h2 { font-size: 1.3rem; margin: 36px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e5e5e5; }
+  @media (prefers-color-scheme: dark) { h2 { border-color: #333; } }
+  h3 { font-size: 1.05rem; margin: 20px 0 8px; }
+
+  /* Category cards */
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 12px; margin: 14px 0; }
+  .cat-card {
+    background: var(--card); border-radius: 10px; padding: 16px; border-left: 4px solid;
+  }
+  .cat-card .cat-name { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+  .cat-card .cat-val { font-size: .9rem; color: var(--muted); }
+  .cat-card .cat-rank { font-size: 1.5rem; font-weight: 800; margin: 4px 0 0; }
+  .cat-card .cat-list { font-size: .78rem; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: .88rem; margin: 12px 0; }
+  .tbl th { text-align: left; padding: 8px 10px; border-bottom: 2px solid #ddd; color: var(--muted); font-weight: 600; font-size: .8rem; }
+  .tbl td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+  .tbl tr:hover td { background: rgba(0,0,0,.03); }
+  @media (prefers-color-scheme: dark) { .tbl th { border-color: #333; } .tbl td { border-color: #222; } }
+
+  .rank-num { font-weight: 800; color: var(--muted); width: 32px; }
+  .rank-1 { color: #d97706; }
+  .rank-2 { color: #888; }
+  .rank-3 { color: #b45309; }
+
+  .bt-bar { display: inline-block; height: 6px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
+
+  .tag {
+    display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: .72rem;
+    font-weight: 600; color: #fff; white-space: nowrap;
+  }
+
+  .insight-box {
+    background: var(--card); border-radius: 10px; padding: 18px 20px; margin: 12px 0;
+    border-left: 4px solid var(--accent);
+  }
+  .insight-box p { margin: 4px 0; }
+
+  .warn { border-left-color: #ef4444; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 16px 14px 40px; }
+    h1 { font-size: 1.35rem; }
+    h2 { font-size: 1.1rem; margin-top: 28px; }
+    h3 { font-size: .95rem; }
+    .subtitle { font-size: .85rem; margin-bottom: 20px; }
+    .badges { gap: 6px; }
+    .badge { font-size: .78rem; padding: 4px 10px; }
+    .cat-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+    .cat-card { padding: 12px 14px; }
+    .cat-card .cat-name { font-size: .9rem; }
+    .cat-card .cat-rank { font-size: 1.25rem; }
+    .tbl { font-size: .78rem; }
+    .tbl th, .tbl td { padding: 5px 6px; }
+    .hide-sm { display: none; }
+    .insight-box { padding: 14px 16px; }
+    p { font-size: .9rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>数据洞察</h1>
+<p class="subtitle">基于 Bradley–Terry 排名模型的风格偏好分析 · 实时数据</p>
+
+<div class="badges" id="badges"></div>
+
+<!-- 品类总览 -->
+<h2>品类总览</h2>
+<div class="cat-grid" id="catGrid"></div>
+
+<p style="margin-top:10px;color:var(--muted);font-size:.85rem;">
+  以下排名基于 <strong><span id="totalN"></span></strong> 条有效判断（已用浏览器指纹 + voter_id 去重）。
+  BT 值 >1 表示胜率高过平均水平，<1 表示低于平均；95% CI 半宽约 ±5.5%–±7.7%。
+</p>
+
+<!-- 完整排名 -->
+<h2>完整排名</h2>
+<div style="overflow-x:auto;">
+<table class="tbl">
+  <thead>
+    <tr><th>#</th><th>风格</th><th>品类</th><th>BT</th><th>胜率</th><th class="hide-sm">CI</th><th class="hide-sm">PK</th></tr>
+  </thead>
+  <tbody id="rankBody"></tbody>
+</table>
+</div>
+
+<!-- 洞察 -->
+<h2>关键洞察</h2>
+
+<div class="insight-box">
+  <h3>胶片模拟断层领先，但内部分化剧烈</h3>
+  <p>8 款胶片模拟平均 BT 2.10，是第二名品类（人像暖调 1.03）的 2 倍、最末品类（电影风格 0.27）的近 8 倍。然而内部两级分化严重——日系1996 (BT 4.21) 和彩色负片100T (BT 0.62) 同属「胶片模拟」，BT 相差近 7 倍。</p>
+  <p><strong>启示：</strong>带具体年份/品牌的胶片名（日系1996、柯达金）远比泛称（彩色负片、彩色反转）受欢迎。人们追的是「1996」「Kodak Gold」的文化符号，不是「胶卷」本身。</p>
+</div>
+
+<div class="insight-box">
+  <h3>人像琥珀提亮是唯一跨界的「破圈」风格</h3>
+  <p>旧归类中它属于 classic，新归类归入「人像暖调」——但它的 BT 3.81 远超同品类其他风格（其余 5 款 BT 均在 0.35–0.52），实际上更像一个「胶片级」的存在。其余暖调风格（怀旧绿、回忆录、摩卡、复古风、花束暖调）全部排在 #14–#23，表现平庸。</p>
+  <p><strong>启示：</strong>暖色调本身不足以讨好大众。人像琥珀提亮的成功在于 <strong>肤色调优</strong>（琥珀提亮肤色），而非「暖」。单纯做暖色滤镜（摩卡、花束暖调）没有竞争力。</p>
+</div>
+
+<div class="insight-box">
+  <h3>冷色调是中等偏下的安全牌，但有例外</h3>
+  <p>8 款冷调风格中，柏林之冬 (#6, BT 1.80) 独树一帜——它本质上是中性偏冷的经典风格而非极端冷调。其余冷调风格集中在 #9–#26，BT 0.31–0.75。蓝调空间 (#24, 胜率 42.7%) 是最不受欢迎的冷调风格。</p>
+  <p><strong>启示：</strong>冷调可以做，但强度必须克制。柏林之冬式的「微冷高级感」受欢迎，蓝调空间式的「全是蓝」被排斥。差距在于饱和度与色调偏移的激进程度。</p>
+</div>
+
+<div class="insight-box">
+  <h3>黑白纪实与黑白老照片是两种物种</h3>
+  <p>黑白纪实 (#8, BT 1.66) 是前 10 中唯一的非胶片/非暖调风格，表现优于大部分冷调和暖调风格。而黑白老照片 1 (#27) 和 2 (#28) 几乎垫底。三者在色彩维度相同（都是黑白），但「干净高对比」vs「做旧泛黄」在审美上完全不可同日而语。</p>
+  <p><strong>启示：</strong>如果做黑白，做干净的黑白不要做旧的。做旧意味着一层黄色或褪色叠加——用户不认为这是「质感」，而是「脏」。</p>
+</div>
+
+<div class="insight-box warn">
+  <h3>电影风格全线溃败——强风格化是大众审美的反面</h3>
+  <p>7 款电影风格占据排名 #20–#32 的全部席位，平均 BT 仅 0.27。霸王别姬·红 (#32) 是倒数第一。霸王别姬·蓝 (#29) 胜率 57.5% 却排倒数——它赢的几乎全是同级别的电影/冷调对手，对上胶片/暖调几乎全败。</p>
+  <p><strong>启示：</strong>电影风格的本质矛盾在于——电影调色是为叙事服务（情绪、年代、氛围），而大众修图是为照片服务（好看、自然、高级）。强色调在电影语境中合理，在生活照上就是「滤镜感太强」。未来做电影系列需要大幅降低色彩强度，或定位为「小众口味」接受低排名。</p>
+</div>
+
+<!-- 设计指南 -->
+<h2>对风格设计的指导性建议</h2>
+<div style="overflow-x:auto;">
+<table class="tbl">
+  <thead><tr><th>方向</th><th>依据</th><th>建议</th></tr></thead>
+  <tbody>
+    <tr><td><strong>深挖具名胶片</strong></td><td>日系1996、柯达金 包揽 Top 10 中的 4 席</td><td>开发「Kodak Portra 400」「Fuji Superia 800」等具体型号模拟，带年份和品牌记忆点</td></tr>
+    <tr><td><strong>肤色优先设计</strong></td><td>人像琥珀提亮 #2，BT=3.81</td><td>新风格对亚洲肤色做专项优化，避免偏绿（冷）和偏紫（洋红）</td></tr>
+    <tr><td><strong>色调强度 ≤ 10%</strong></td><td>柏林之冬 #6 vs 蓝调空间 #24</td><td>冷调或风格化偏移控制在 HSL 色相 ±10° 以内，饱和度 ±15% 以内</td></tr>
+    <tr><td><strong>黑白走纯净路线</strong></td><td>黑白纪实 #8 vs 黑白老照片 #27-28</td><td>高对比度、纯黑白、无偏色；不做泛黄/褪色/颗粒做旧</td></tr>
+    <tr><td><strong>电影风格降维</strong></td><td>7 款电影风格全部垫底</td><td>如继续做电影系列，将色彩强度降至经典款的 50% 以下；或服务小众不追求排名</td></tr>
+    <tr><td><strong>避免强蓝色调</strong></td><td>蓝调空间 胜率 42.7%</td><td>蓝色倾向天然不讨喜——人类对皮肤泛蓝（缺氧/尸体感）有本能排斥</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p style="text-align:center;color:var(--muted);font-size:.8rem;margin-top:40px;">
+  数据实时从 Supabase 拉取 · 与本网站排名算法一致
+</p>
+</div>
+
+<script>
+// Embedded ranking data — generated by tools/_insights.py
+const DATA = {"totalJudgments": 3317, "catOrder": ["胶片模拟", "人像暖调", "冷调氛围", "黑白", "电影风格"], "catDesc": {"胶片模拟": "模拟真实胶片色彩，色彩自然克制", "人像暖调": "暖色倾向，对肤色友好", "冷调氛围": "蓝/青冷色调，氛围感强", "黑白": "去除色彩，靠灰度层次叙事", "电影风格": "强风格化，灵感来自特定影片"}, "catData": {"胶片模拟": {"count": 8, "avgRank": 6.6, "avgBT": 2.1022, "avgWinrate": 50.0, "styles": ["日系1996", "奥林帕斯", "富士NN", "柯达金", "港味", "彩色反转T64", "彩色负片", "彩色负片100T"]}, "人像暖调": {"count": 6, "avgRank": 14.5, "avgBT": 1.0283, "avgWinrate": 50.8, "styles": ["人像琥珀提亮", "怀旧绿", "回忆录", "摩卡", "复古风", "花束暖调"]}, "冷调氛围": {"count": 8, "avgRank": 17.5, "avgBT": 0.6233, "avgWinrate": 49.3, "styles": ["柏林之冬", "低饱和蓝晒", "灰绿色调", "蓝调时光", "蓝晒", "蓝调空间", "交叉冲洗", "岛屿青雾"]}, "黑白": {"count": 3, "avgRank": 21.0, "avgBT": 0.7202, "avgWinrate": 48.9, "styles": ["黑白纪实", "黑白老照片 1", "黑白老照片 2"]}, "电影风格": {"count": 7, "avgRank": 26.4, "avgBT": 0.2665, "avgWinrate": 50.3, "styles": ["千禧电影", "电影感", "漂白旁路", "霸王别姬·蓝", "重庆森林 (f)", "重庆森林", "霸王别姬·红"]}}, "ranking": [{"rank": 1, "id": "l04", "name": "日系1996", "category": "胶片模拟", "bt": 4.2112, "winrate": 54.5, "ci": 5.6, "n": 302, "wins": 154, "losses": 127, "ties": 21}, {"rank": 2, "id": "l01", "name": "人像琥珀提亮", "category": "人像暖调", "bt": 3.808, "winrate": 51.6, "ci": 5.6, "n": 304, "wins": 147, "losses": 137, "ties": 20}, {"rank": 3, "id": "l02", "name": "奥林帕斯", "category": "胶片模拟", "bt": 3.5411, "winrate": 48.3, "ci": 5.6, "n": 302, "wins": 138, "losses": 148, "ties": 16}, {"rank": 4, "id": "l03", "name": "富士NN", "category": "胶片模拟", "bt": 3.3706, "winrate": 47.8, "ci": 5.6, "n": 302, "wins": 133, "losses": 146, "ties": 23}, {"rank": 5, "id": "l06", "name": "柯达金", "category": "胶片模拟", "bt": 1.9811, "winrate": 52.8, "ci": 5.8, "n": 287, "wins": 136, "losses": 120, "ties": 31}, {"rank": 6, "id": "l05", "name": "柏林之冬", "category": "冷调氛围", "bt": 1.8022, "winrate": 49.2, "ci": 5.7, "n": 299, "wins": 135, "losses": 140, "ties": 24}, {"rank": 7, "id": "l07", "name": "港味", "category": "胶片模拟", "bt": 1.7472, "winrate": 49.3, "ci": 5.8, "n": 283, "wins": 128, "losses": 132, "ties": 23}, {"rank": 8, "id": "l08", "name": "黑白纪实", "category": "黑白", "bt": 1.6628, "winrate": 49.3, "ci": 5.7, "n": 291, "wins": 126, "losses": 130, "ties": 35}, {"rank": 9, "id": "l09", "name": "低饱和蓝晒", "category": "冷调氛围", "bt": 0.75, "winrate": 52.0, "ci": 7.0, "n": 197, "wins": 89, "losses": 81, "ties": 27}, {"rank": 10, "id": "l10", "name": "彩色反转T64", "category": "胶片模拟", "bt": 0.6775, "winrate": 47.2, "ci": 6.9, "n": 200, "wins": 84, "losses": 95, "ties": 21}, {"rank": 11, "id": "l12", "name": "彩色负片", "category": "胶片模拟", "bt": 0.6698, "winrate": 52.5, "ci": 7.0, "n": 197, "wins": 89, "losses": 79, "ties": 29}, {"rank": 12, "id": "l11", "name": "彩色负片100T", "category": "胶片模拟", "bt": 0.6192, "winrate": 47.7, "ci": 7.0, "n": 194, "wins": 81, "losses": 90, "ties": 23}, {"rank": 13, "id": "l14", "name": "灰绿色调", "category": "冷调氛围", "bt": 0.5721, "winrate": 51.0, "ci": 7.1, "n": 191, "wins": 89, "losses": 85, "ties": 17}, {"rank": 14, "id": "l20", "name": "怀旧绿", "category": "人像暖调", "bt": 0.5238, "winrate": 52.5, "ci": 7.4, "n": 177, "wins": 84, "losses": 75, "ties": 18}, {"rank": 15, "id": "l18", "name": "回忆录", "category": "人像暖调", "bt": 0.5222, "winrate": 57.8, "ci": 7.2, "n": 180, "wins": 92, "losses": 64, "ties": 24}, {"rank": 16, "id": "l13", "name": "摩卡", "category": "人像暖调", "bt": 0.4984, "winrate": 47.9, "ci": 7.0, "n": 193, "wins": 80, "losses": 88, "ties": 25}, {"rank": 17, "id": "l19", "name": "复古风", "category": "人像暖调", "bt": 0.467, "winrate": 46.9, "ci": 7.3, "n": 179, "wins": 77, "losses": 88, "ties": 14}, {"rank": 18, "id": "l16", "name": "蓝调时光", "category": "冷调氛围", "bt": 0.4494, "winrate": 49.2, "ci": 7.2, "n": 184, "wins": 81, "losses": 84, "ties": 19}, {"rank": 19, "id": "l15", "name": "蓝晒", "category": "冷调氛围", "bt": 0.4373, "winrate": 50.3, "ci": 7.2, "n": 186, "wins": 81, "losses": 80, "ties": 25}, {"rank": 20, "id": "l27", "name": "千禧电影", "category": "电影风格", "bt": 0.3806, "winrate": 51.2, "ci": 7.7, "n": 164, "wins": 75, "losses": 71, "ties": 18}, {"rank": 21, "id": "l28", "name": "电影感", "category": "电影风格", "bt": 0.3662, "winrate": 48.8, "ci": 7.7, "n": 163, "wins": 72, "losses": 76, "ties": 15}, {"rank": 22, "id": "l25", "name": "漂白旁路", "category": "电影风格", "bt": 0.3563, "winrate": 49.1, "ci": 7.5, "n": 169, "wins": 74, "losses": 77, "ties": 18}, {"rank": 23, "id": "l26", "name": "花束暖调", "category": "人像暖调", "bt": 0.3505, "winrate": 48.2, "ci": 7.6, "n": 167, "wins": 73, "losses": 79, "ties": 15}, {"rank": 24, "id": "l17", "name": "蓝调空间", "category": "冷调氛围", "bt": 0.3389, "winrate": 42.7, "ci": 7.3, "n": 177, "wins": 63, "losses": 89, "ties": 25}, {"rank": 25, "id": "l23", "name": "交叉冲洗", "category": "冷调氛围", "bt": 0.3265, "winrate": 50.3, "ci": 7.5, "n": 172, "wins": 77, "losses": 76, "ties": 19}, {"rank": 26, "id": "l24", "name": "岛屿青雾", "category": "冷调氛围", "bt": 0.3099, "winrate": 49.4, "ci": 7.5, "n": 173, "wins": 75, "losses": 77, "ties": 21}, {"rank": 27, "id": "l21", "name": "黑白老照片 1", "category": "黑白", "bt": 0.2523, "winrate": 48.6, "ci": 7.4, "n": 173, "wins": 73, "losses": 78, "ties": 22}, {"rank": 28, "id": "l22", "name": "黑白老照片 2", "category": "黑白", "bt": 0.2456, "winrate": 48.8, "ci": 7.5, "n": 171, "wins": 71, "losses": 75, "ties": 25}, {"rank": 29, "id": "l32", "name": "霸王别姬·蓝", "category": "电影风格", "bt": 0.2115, "winrate": 57.5, "ci": 7.5, "n": 166, "wins": 78, "losses": 53, "ties": 35}, {"rank": 30, "id": "l30", "name": "重庆森林 (f)", "category": "电影风格", "bt": 0.2027, "winrate": 49.4, "ci": 7.7, "n": 164, "wins": 70, "losses": 72, "ties": 22}, {"rank": 31, "id": "l29", "name": "重庆森林", "category": "电影风格", "bt": 0.1923, "winrate": 49.7, "ci": 7.7, "n": 163, "wins": 68, "losses": 69, "ties": 26}, {"rank": 32, "id": "l31", "name": "霸王别姬·红", "category": "电影风格", "bt": 0.1559, "winrate": 46.3, "ci": 7.6, "n": 164, "wins": 58, "losses": 70, "ties": 36}]};
+
+(function() {
+  const catColors = { '胶片模拟':'#d97706','人像暖调':'#e96b4a','冷调氛围':'#2563eb','黑白':'#555','电影风格':'#7c3aed' };
+
+  // Badges
+  const badges = document.getElementById('badges');
+  let html = '';
+  const catOrder = DATA.catOrder;
+  for (const ct of catOrder) {
+    const d = DATA.catData[ct];
+    html += `<span class="badge"><span class="dot" style="background:${catColors[ct]}"></span>${ct} · 均排 ${d.avgRank} · ${d.count} 款</span>`;
+  }
+  badges.innerHTML = html;
+
+  // Category cards
+  const grid = document.getElementById('catGrid');
+  let cards = '';
+  for (const ct of catOrder) {
+    const d = DATA.catData[ct];
+    const btFmt = d.avgBT >= 5 ? d.avgBT.toFixed(1) : d.avgBT.toFixed(2);
+    cards += `<div class="cat-card" style="border-left-color:${catColors[ct]}">
+      <div class="cat-name" style="color:${catColors[ct]}">${ct}</div>
+      <div class="cat-val">${DATA.catDesc[ct]}</div>
+      <div class="cat-rank">均排 ${d.avgRank} <span style="font-size:.7rem;opacity:.6">· BT ${btFmt}</span></div>
+      <div class="cat-list">${d.styles.join(' · ')}</div>
+    </div>`;
+  }
+  grid.innerHTML = cards;
+
+  // Total
+  document.getElementById('totalN').textContent = DATA.totalJudgments.toLocaleString();
+
+  // Ranking table
+  const body = document.getElementById('rankBody');
+  let rows = '';
+  for (const r of DATA.ranking) {
+    const rc = r.rank === 1 ? ' rank-1' : r.rank === 2 ? ' rank-2' : r.rank === 3 ? ' rank-3' : '';
+    const barW = Math.max(r.bt * 12, 2);
+    rows += `<tr>
+      <td class="rank-num${rc}">${r.rank}</td>
+      <td>${r.name}</td>
+      <td><span class="tag" style="background:${catColors[r.category]}">${r.category}</span></td>
+      <td><span class="bt-bar" style="width:${barW}px;background:${r.bt>1?'#16a34a':'#dc2626'}"></span>${r.bt.toFixed(2)}</td>
+      <td>${r.winrate}%</td>
+      <td class="hide-sm">±${r.ci}%</td>
+      <td class="hide-sm">${r.n}</td>
+    </tr>`;
+  }
+  body.innerHTML = rows;
+})();
+</script>
+</body>
+</html>
