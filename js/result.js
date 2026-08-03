@@ -128,15 +128,20 @@
     }).join('');
 
     const cvPct = (balance.cv * 100).toFixed(0);
+    // CV 颜色标签：衡量「参与均衡度」（不是样本总量）
+    //   <20% 均衡(绿) / 20%–40% 一般(黄) / >40% 失衡(红)
+    const cvClass = balance.cv < 0.2 ? 'cv-good' : (balance.cv <= 0.4 ? 'cv-ok' : 'cv-bad');
+    const cvLabel = balance.cv < 0.2 ? '均衡' : (balance.cv <= 0.4 ? '一般' : '失衡');
     box.innerHTML = `
       <h3>参与均衡检查（按 PK 次数升序）</h3>
       <p class="ss-line">参与风格数：<b>${balance.nParticipated}</b> / ${lutIds.length}　|
         最少 <b>${balance.minN}</b>　最多 <b>${balance.maxN}</b>　平均 <b>${balance.avgN.toFixed(1)}</b>　|
-        变异系数 CV <b>${cvPct}%</b></p>
+        变异系数 CV <b class="${cvClass}">${cvPct}%</b> <span class="cv-tag ${cvClass}">${cvLabel}</span></p>
       <p class="ss-line">目标每风格 ≥ ${target} 次　|　未达标 ${balance.underTarget.length} 个　|
         还需约 <b>${balance.extraJudgments}</b> 次判断使全部达标</p>
       <div class="bal-list">${rows}</div>
-      <p class="ss-hint">⚠ 标红 = 未达目标参与次数，其排名可信度偏低，建议补充该风格的 PK。理想情况下所有风格 PK 次数应一致（CV→0%）。</p>
+      <p class="ss-hint">⚠ 标红 = 未达目标参与次数，其排名可信度偏低，建议补充该风格的 PK。理想情况下所有风格 PK 次数应一致（CV→0%）。<br>
+      📌 CV（变异系数）= 参与次数的标准差÷平均数，衡量的是「<b>均衡度</b>」而非样本总量；样本总量够不够请看上方「样本量评估」的 95% CI 半宽（±X%）。CV 越小越均衡：&lt;20% 均衡、20%–40% 一般、&gt;40% 失衡。</p>
     `;
   }
 

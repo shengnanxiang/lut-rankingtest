@@ -356,6 +356,23 @@ body.result-page .app {
   border-radius: 6px;
 }
 .bal-low .bal-bar-fill { background: var(--danger); }
+
+/* CV 颜色标签：均衡(绿) / 一般(黄) / 失衡(红) */
+.cv-good { color: #4caf82 !important; }
+.cv-ok   { color: #d9a441 !important; }
+.cv-bad  { color: var(--danger) !important; }
+.cv-tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.cv-tag.cv-good { background: rgba(76, 175, 130, 0.15); }
+.cv-tag.cv-ok   { background: rgba(217, 164, 65, 0.15); }
+.cv-tag.cv-bad  { background: rgba(232, 91, 91, 0.15); }
 .bal-n {
   flex: 0 0 48px;
   text-align: right;
