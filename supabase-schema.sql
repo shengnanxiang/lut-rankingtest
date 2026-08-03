@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.judgments (
   id          bigserial PRIMARY KEY,
   test_id     text NOT NULL,
   voter_id    text NOT NULL,
+  fingerprint text,               -- 浏览器指纹（跨会话识别同设备，老数据为 null）
   lut_a       text NOT NULL,
   lut_b       text NOT NULL,
   winner      text NOT NULL CHECK (winner = 'tie' OR winner = lut_a OR winner = lut_b),
@@ -16,6 +17,9 @@ CREATE TABLE IF NOT EXISTS public.judgments (
   ts          timestamptz NOT NULL DEFAULT now(),
   resp_ms     integer NOT NULL DEFAULT 0
 );
+
+-- 兼容旧表：如果表已存在但缺 fingerprint 列
+ALTER TABLE public.judgments ADD COLUMN IF NOT EXISTS fingerprint text;
 
 -- 索引：拉取某批次时按 test_id 过滤 + 按 ts 排序
 CREATE INDEX IF NOT EXISTS idx_judgments_test_ts ON public.judgments (test_id, ts);

@@ -122,6 +122,27 @@
     return id;
   }
 
+  // 浏览器指纹：基于设备硬件特征生成稳定标识
+  // 用途：即使受访者清除 localStorage 或使用无痕模式，同设备同浏览器仍能识别为同一人。
+  // 不依赖 cookie / canvas / WebGL，纯功能检测，隐私友好。
+  function generateFingerprint() {
+    const parts = [
+      navigator.userAgent || '',
+      screen.width + 'x' + screen.height + 'x' + (screen.colorDepth || 0),
+      navigator.hardwareConcurrency || 0,
+      Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+      navigator.language || '',
+      navigator.platform || ''
+    ];
+    const raw = parts.join('|');
+    // 简单 hash（非加密用途，仅作去重 key；用减法 hash 兼顾速度与均匀性）
+    let h = 0;
+    for (let i = 0; i < raw.length; i++) {
+      h = ((h << 5) - h + raw.charCodeAt(i)) | 0;
+    }
+    return 'fp-' + Math.abs(h).toString(36);
+  }
+
   // 后台定期重试队列 + 页面可见时立即冲一次
   setInterval(flushQueue, 15000);
   document.addEventListener('visibilitychange', () => {
@@ -133,6 +154,7 @@
     flushQueue,
     fetchJudgments,
     getVoterId,
+    getFingerprint: generateFingerprint,
     _queueSize: () => loadQueue().length
   };
 })();

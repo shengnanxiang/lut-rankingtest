@@ -190,6 +190,7 @@
     const record = {
       test_id: cfg.testId,
       voter_id: window.LRT_SUPABASE.getVoterId(),
+      fingerprint: window.LRT_SUPABASE.getFingerprint(),
       lut_a: a,
       lut_b: b,
       winner,

@@ -214,7 +214,7 @@
 
     <div class="card">
       <h3>实际数据分布</h3>
-      <p>每个风格的 PK 数在 <strong>235–255</strong> 之间，分布相当均匀。总数据量约 <strong>2,763</strong> 条有效对比（已去重）。</p>
+      <p>每个风格的 PK 数在 <strong>158–255</strong> 之间，个别风格参与率偏低。总数据量约 <strong>2,763</strong> 条有效对比（已去重）。</p>
     </div>
   </section>
 
@@ -303,7 +303,35 @@
   <!-- 6 -->
   <section>
     <h2><span class="num">6</span> 数据去重</h2>
-    <p>同一受访者、同一对风格，只计算一次。防止误双击导致重复提交，确保每个判断在模型中只贡献一份权重。</p>
+    <p>同一受访者、同一对风格，只计算一次。防止误双击导致重复提交，确保每个判断在模型中只贡献一份权重。2026/08 起新增<strong>浏览器指纹</strong>识别——即使受访者清除 localStorage 或使用无痕模式，同设备同浏览器也会被识别为同一受访者，进一步提升去重精度。</p>
+  </section>
+
+  <!-- 7 -->
+  <section>
+    <h2><span class="num">7</span> 数据局限性</h2>
+
+    <h3 style="margin-top:24px;">7.1 PK 次数不均衡</h3>
+    <p>当前各风格参与对比次数在 <strong>158–255</strong> 之间，最低与最高相差约 38%。这主要源于两两随机配对的随机波动——并非某个风格被系统性排斥。</p>
+    <p>Bradley&ndash;Terry 模型天然能处理这类不均衡（公式中分母用<strong>两两对阵次数</strong>而非总次数，互相对冲）。主要影响在于<strong>置信区间精度</strong>：PK 少（158 场）的风格 CI 半宽约 ±7.8%，PK 多（255 场）的风格约 ±6.2%，低参与度风格的排名浮动空间更大。</p>
+
+    <h3 style="margin-top:28px;">7.2 同人跨设备投票</h3>
+    <p>受访者身份通过浏览器 localStorage 存储的 <code>voter_id</code> 来标识。<strong>换一台设备</strong>（手机→电脑）或<strong>换一个浏览器</strong>会产生新的 voter_id，同一人的多轮判断会被视为不同受访者的独立判断。</p>
+    <p>如果某位受访者恰好是「日系1996」的忠实爱好者，在三个设备上各做一轮，ta 的偏好就会以 3 倍权重计入排名。越活跃的受访者在最终排名中话语权越大，这是当前方法的一个已知局限。</p>
+    <div class="card">
+      <h3>2026/08 改进：浏览器指纹</h3>
+      <p>新增的浏览器指纹（基于 User Agent + 屏幕分辨率 + 时区等硬件特征）可在<strong>同设备上</strong>跨会话识别同一受访者（如清除 localStorage 后重投）。但<strong>换设备仍无法检测</strong>——这需要登录机制才能彻底解决。</p>
+    </div>
+
+    <h3 style="margin-top:28px;">7.3 样本量目标</h3>
+    <p>根据 Wilson 置信区间公式，若要将 95% CI 半宽控制在 ±5% 以内，所需的样本量估算如下：</p>
+    <div class="formula-box">n  =  (1.96 / 0.05)²  ×  0.25  ≈  <span class="hl">384</span>  <span class="cmt">// 每风格最少 PK 数</span>
+N  =  384 × 32 / 2       ≈  <span class="hl">6,144</span>  <span class="cmt">// 总判断数</span></div>
+    <p>当前数据约 <strong>2,763</strong> 条、平均每风格 <strong>173</strong> 次 PK，距离 5% CI 目标还需约 <strong>3,600</strong> 条新增判断。</p>
+
+    <div class="highlight" style="text-align:left; font-weight:normal;">
+      <strong>当前进度：</strong>每风格 PK 数 (158–255) → 95% CI 半宽约 ±6%–±8%。<br>
+      <strong>目标：</strong>每风格 PK 数 ≥ 385 → 95% CI 半宽 ≤ ±5%。还需约 <strong>3,600 条</strong>有效判断。
+    </div>
   </section>
 
   <footer>

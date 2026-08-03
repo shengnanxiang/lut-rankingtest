@@ -138,8 +138,9 @@
     lutIds.forEach(id => counts[id] = { wins: 0, losses: 0, ties: 0, n: 0 });
     const seen = new Set();
     for (const j of judgments) {
-      // 防重复：同一 voter 对同对只算一次
-      const k = `${j.voter_id}|${j.lut_a}|${j.lut_b}`;
+      // 防重复：浏览器指纹优先（跨会话同设备），无指纹则回退 voter_id（兼容旧数据）
+      const dedupKey = j.fingerprint || j.voter_id;
+      const k = `${dedupKey}|${j.lut_a}|${j.lut_b}`;
       if (seen.has(k)) continue;
       seen.add(k);
       const a = j.lut_a, b = j.lut_b, w = j.winner;
@@ -211,8 +212,9 @@
     const stdN = Math.sqrt(variance);
     const cv = avgN ? stdN / avgN : 0; // 变异系数：0=完全均匀，越大越不均衡
 
-    // 默认目标：每个风格至少 50 次 PK（95% CI 半宽≈±14%）
-    const TARGET_PER_STYLE = 50;
+    // 目标：每个风格至少 385 次 PK（95% CI 半宽≈±5%）
+    // 公式：n = (1.96/0.05)² × 0.25 ≈ 384.2 → 取 385
+    const TARGET_PER_STYLE = 385;
     const underTarget = lutIds.filter(id => stats[id].n < TARGET_PER_STYLE);
     // 达标所需总判断数 = 把未达标风格补齐到目标，每判断贡献 2 个风格
     const deficit = lutIds.reduce((a, id) => a + Math.max(0, TARGET_PER_STYLE - stats[id].n), 0);
@@ -248,8 +250,8 @@
       return { halfWidth: h, nPerStyle, totalJudgments: Math.ceil(nPerStyle * lutCount / 2) };
     });
 
-    // 默认目标：每个风格 50 次 PK（半宽≈±14%）
-    const targetPerStyle = 50;
+    // 目标：每个风格 385 次 PK → 95% CI 半宽≈±5%
+    const targetPerStyle = 385;
     const targetTotal = Math.ceil(targetPerStyle * lutCount / 2);
 
     return { totalJudgments, avgNPerStyle, currentHalfWidth, targetPerStyle, targetTotal, ciTargets };
