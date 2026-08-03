@@ -71,6 +71,10 @@ body.result-page .app {
   color: var(--text-dim);
   font-size: clamp(13px, 1.4vw, 15px);
 }
+.header a, .header a:visited {
+  color: var(--accent);
+  text-decoration: underline;
+}
 
 /* ---------- 进度条 ---------- */
 .progress {
