@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风格排名方法说明</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --card: #ffffff;
+    --text: #1c1917;
+    --text-muted: #57534e;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --border: #e7e5e4;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 48px 0 40px;
+  }
+  .hero h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: #0f172a;
+    margin-bottom: 12px;
+  }
+  .hero p {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    max-width: 540px;
+    margin: 0 auto;
+  }
+  .hero .badge-row {
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  .badge {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: .82rem;
+    font-weight: 600;
+    padding: 4px 14px;
+    border-radius: 999px;
+  }
+
+  /* Section */
+  section { margin-top: 48px; }
+  section h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  section h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    background: #1e293b;
+    color: #fff;
+    border-radius: 8px;
+    font-size: .85rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  section p { color: var(--text-muted); margin-bottom: 12px; }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .card h3 { font-size: 1.05rem; font-weight: 650; margin-bottom: 8px; }
+  .card p { color: var(--text-muted); font-size: .95rem; margin-bottom: 0; }
+
+  /* Callout */
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-light);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 20px 24px;
+    margin: 20px 0;
+  }
+  .callout strong { color: var(--accent); }
+
+  /* Chess analogy */
+  .analogy {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    margin: 16px 0;
+  }
+  @media (max-width: 600px) { .analogy { grid-template-columns: 1fr; } }
+  .analogy .player {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+  }
+  .analogy .player .icon { font-size: 2rem; margin-bottom: 8px; }
+  .analogy .player .name { font-weight: 700; font-size: 1.05rem; }
+  .analogy .player .stat { font-size: .9rem; color: var(--text-muted); margin-top: 4px; }
+  .analogy .loser { opacity: .6; }
+
+  /* Formula */
+  .formula-box {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: .92rem;
+    line-height: 2;
+    overflow-x: auto;
+    margin: 16px 0;
+    white-space: pre;
+  }
+  .formula-box .hl { color: #93c5fd; }
+  .formula-box .cmt { color: #64748b; }
+
+  /* Table */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .93rem;
+  }
+  table th, table td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  table th {
+    font-weight: 650;
+    color: var(--text-muted);
+    font-size: .82rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  table tr:last-child td { border-bottom: none; }
+
+  /* Highlight */
+  .highlight {
+    background: linear-gradient(135deg, #fef3c7, #fef9c3);
+    border: 1px solid #fde68a;
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin: 20px 0;
+    font-weight: 600;
+    font-size: 1.05rem;
+    text-align: center;
+    color: #92400e;
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-size: .85rem;
+    color: #a8a29e;
+  }
+  footer a { color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="hero">
+    <h1>风格排名方法说明</h1>
+    <p>32 个照片风格滤镜的视觉偏好排名——背后的实验设计、统计模型与算法细节。</p>
+    <div class="badge-row">
+      <span class="badge">Pairwise Comparison</span>
+      <span class="badge">Bradley&ndash;Terry Model</span>
+      <span class="badge">32 Styles</span>
+      <span class="badge">~2763 Judgments</span>
+    </div>
+  </div>
+
+  <!-- 1 -->
+  <section>
+    <h2><span class="num">1</span> 测试设计：两两比较</h2>
+    <p>每次向受访者展示<strong>同一张照片的两个风格版本</strong>，问一个简单的问题——「你更喜欢哪个？」。</p>
+
+    <div class="card">
+      <h3>为什么不用打分制？</h3>
+      <p>让受访者给每个风格打 1–5 分容易出现「全都给 3 分」的无效数据。两两比较只需做一次二选一，判断更直接、门槛更低。相对偏好比绝对评分更可靠，这是心理测量学中被广泛验证的结论。</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <h2><span class="num">2</span> 配对策略：平衡轮转</h2>
+    <p>每个受访者每次做 <strong>20 对</strong>比较。配对不是完全随机——算法确保每个风格与每个对手的<strong>对阵次数大致均衡</strong>，避免某个风格只跟弱手打、另一个只跟强手打的不公平情况。</p>
+
+    <div class="card">
+      <h3>实际数据分布</h3>
+      <p>每个风格的 PK 数在 <strong>235–255</strong> 之间，分布相当均匀。总数据量约 <strong>2,763</strong> 条有效对比（已去重）。</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <h2><span class="num">3</span> 排名算法：Bradley&ndash;Terry 模型</h2>
+
+    <h3 style="margin-top:24px;">为什么不能只看胜率？</h3>
+
+    <div class="analogy">
+      <div class="player">
+        <div class="icon">👤</div>
+        <div class="name">业余棋手</div>
+        <div class="stat">跟街头路人下 100 盘<br>赢 90 盘 → <strong>胜率 90%</strong></div>
+      </div>
+      <div class="player loser">
+        <div class="icon">👑</div>
+        <div class="name">职业棋手</div>
+        <div class="stat">跟世界冠军下 100 盘<br>赢 50 盘 → <strong>胜率 50%</strong></div>
+      </div>
+    </div>
+    <p style="text-align:center; margin-top:-4px;">按胜率排 → 业余棋手第一。这显然荒谬。真正的排名必须考虑<strong>对手实力</strong>。</p>
+
+    <p style="margin-top:20px;">风格排名完全同理。实际数据中出现了<strong>胜率 53% 排第 5、胜率 46% 排第 4</strong>的情况——因为后者更多对上强敌，每一场胜利的含金量更高。</p>
+
+    <h3 style="margin-top:28px;">模型原理</h3>
+    <p>Bradley&ndash;Terry 模型给每个风格估算一个<strong>潜在强度值 π</strong>（类似于国际象棋的 Elo 分）。基本假设非常简单：</p>
+
+    <div class="callout">
+      <strong>风格 i 赢风格 j 的概率 = π<sub>i</sub> / (π<sub>i</sub> + π<sub>j</sub>)</strong>
+    </div>
+
+    <p>如果 π<sub>i</sub> = 4，π<sub>j</sub> = 1，则 i 赢 j 的概率是 4 / (4+1) = <strong>80%</strong>。强度差距越大，胜率预测越悬殊。</p>
+
+    <h3 style="margin-top:28px;">迭代求解</h3>
+    <p>给定所有对战结果，π 值通过以下公式迭代计算，直至数值收敛：</p>
+
+    <div class="formula-box">π<span class="cmt">_i</span>  =  <span class="hl">W</span><span class="cmt">_i</span>  /  Σ<span class="cmt">_j</span> [ <span class="hl">n_ij</span>  /  ( π<span class="cmt">_i</span> + π<span class="cmt">_j</span> ) ]
+
+<span class="cmt">W_i</span>    =  风格 i 的总胜场数
+<span class="cmt">n_ij</span>   =  风格 i 与风格 j 的对阵次数
+<span class="cmt">π_i</span>    =  风格 i 的当前强度估计</div>
+
+    <p>所有 π 值初始化为 1.0，通常几十轮迭代后收敛。最终按 π 值从大到小排列即得排名。</p>
+
+    <div class="highlight">
+      🏆  这不是投票，这是体育联赛积分。<br>
+      赢一个强敌比赢一个弱敌加更多分——所以胜率高的不一定排前面，要看赢的是谁。
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <h2><span class="num">4</span> 各项指标说明</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>指标</th><th>含义</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>排名</strong></td><td>按 BT 强度 π 从大到小排列（已考虑对手实力）</td></tr>
+          <tr><td><strong>胜率</strong></td><td>该风格在所有 PK 中获胜的比例（平局不计入）</td></tr>
+          <tr><td><strong>±6%</strong></td><td>95% 置信区间的误差范围。真值有 95% 概率落在此区间。PK 数约 250 次时统计误差约为 ±6%</td></tr>
+          <tr><td><strong>PK</strong></td><td>该风格参与的有效对比总次数</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <h2><span class="num">5</span> 置信区间与显著性</h2>
+    <p>当样本量约为 250 次 PK 时，胜率的抽样误差约 <strong>±6%</strong>（95% 置信水平）。这意味着：</p>
+
+    <div class="card">
+      <h3>如何解读差距</h3>
+      <ul style="color:var(--text-muted); padding-left:20px; font-size:.95rem;">
+        <li style="margin-bottom:6px;">两个风格的胜率差小于约 <strong>12%</strong> 时，不能 100% 确定谁更好</li>
+        <li style="margin-bottom:6px;">BT 强度值比单纯胜率更可靠，因为它综合了对手信息</li>
+        <li>相邻排名之间的差异可能不够显著——但 <strong>TOP 3 与后半段之间的差距是非常确定的</strong></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <h2><span class="num">6</span> 数据去重</h2>
+    <p>同一受访者、同一对风格，只计算一次。防止误双击导致重复提交，确保每个判断在模型中只贡献一份权重。</p>
+  </section>
+
+  <footer>
+    <p>参考：Bradley &amp; Terry (1952). <em>Rank analysis of incomplete block designs: I. The method of paired comparisons.</em> Biometrika, 39(3/4), 324–345.  ·  Elo, A. E. (1978). <em>The Rating of Chessplayers, Past and Present.</em> Arco Publishing.</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
