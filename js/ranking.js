@@ -192,11 +192,63 @@
       idx += tierSize;
       tiers.push(slice.map(id => ({ lutId: id, ...stats[id] })));
     }
-    return { top, tiers, counts, pi, sorted, stats, usedFallback: !ok };
+    // ---- 参与均衡度分析（识别某些风格因 PK 次数过低导致排名偏差）----
+    const ns = lutIds.map(id => stats[id].n);
+    const nParticipated = ns.filter(v => v > 0).length;
+    const minN = ns.length ? Math.min(...ns) : 0;
+    const maxN = ns.length ? Math.max(...ns) : 0;
+    const avgN = nParticipated ? ns.reduce((a, b) => a + b, 0) / nParticipated : 0;
+    const variance = nParticipated
+      ? ns.reduce((a, b) => a + Math.pow(b - avgN, 2), 0) / nParticipated : 0;
+    const stdN = Math.sqrt(variance);
+    const cv = avgN ? stdN / avgN : 0; // 变异系数：0=完全均匀，越大越不均衡
+
+    // 默认目标：每个风格至少 50 次 PK（95% CI 半宽≈±14%）
+    const TARGET_PER_STYLE = 50;
+    const underTarget = lutIds.filter(id => stats[id].n < TARGET_PER_STYLE);
+    // 达标所需总判断数 = 把未达标风格补齐到目标，每判断贡献 2 个风格
+    const deficit = lutIds.reduce((a, id) => a + Math.max(0, TARGET_PER_STYLE - stats[id].n), 0);
+    const extraJudgments = Math.ceil(deficit / 2);
+
+    return {
+      top, tiers, counts, pi, sorted, stats, usedFallback: !ok,
+      balance: {
+        nParticipated,
+        minN, maxN, avgN, stdN, cv,
+        targetPerStyle: TARGET_PER_STYLE,
+        underTarget,            // 未达标的风格 id 列表
+        deficit,
+        extraJudgments          // 还需多少判断使所有风格达标
+      }
+    };
+  }
+
+  // ---------- 样本量 / 95% 置信区间评估 ----------
+  // 每个风格的 PK 次数 n 决定胜率估计的置信区间半宽（正态近似，最坏 p=0.5）：
+  //   halfWidth = 1.96 * sqrt(0.25 / n)
+  // 给定目标半宽 h，单风格所需 n = (1.96/h)^2 * 0.25；总判断数 = n * 风格数 / 2
+  function sampleSizeAssessment(judgments, lutCount) {
+    const totalJudgments = judgments.length;
+    const totalPK = totalJudgments * 2;                 // 每判断 2 个风格各参与 1 次
+    const avgNPerStyle = lutCount ? totalPK / lutCount : 0;
+    const currentHalfWidth = avgNPerStyle
+      ? 1.96 * Math.sqrt(0.25 / avgNPerStyle) : Infinity;
+
+    // 不同目标半宽对应的单风格 n 与总判断数（用于展示「要达到 95% CI 需多少样本」）
+    const ciTargets = [0.05, 0.10, 0.15].map(h => {
+      const nPerStyle = Math.ceil(Math.pow(1.96 / h, 2) * 0.25);
+      return { halfWidth: h, nPerStyle, totalJudgments: Math.ceil(nPerStyle * lutCount / 2) };
+    });
+
+    // 默认目标：每个风格 50 次 PK（半宽≈±14%）
+    const targetPerStyle = 50;
+    const targetTotal = Math.ceil(targetPerStyle * lutCount / 2);
+
+    return { totalJudgments, avgNPerStyle, currentHalfWidth, targetPerStyle, targetTotal, ciTargets };
   }
 
   window.LRT_RANKING = {
     newEloState, applyElo, pickNextPair,
-    rank, aggregate, bradleyTerry
+    rank, aggregate, bradleyTerry, sampleSizeAssessment
   };
 })();

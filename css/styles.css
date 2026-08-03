@@ -267,6 +267,105 @@ body.result-page .app {
   font-size: 13px;
 }
 
+/* Top10 / 分档里的 PK 次数标注 */
+.top10-cell .pk {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ---------- 样本量评估 ---------- */
+.sample-size, .balance-check {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.sample-size h3, .balance-check h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.ss-line { font-size: 14px; margin: 6px 0; line-height: 1.5; }
+.ss-line b { color: var(--accent); }
+.ss-progress {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+.ss-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #5b8def);
+  border-radius: 6px;
+  transition: width .3s;
+}
+.ss-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 13px;
+}
+.ss-table th, .ss-table td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: center;
+}
+.ss-table th { background: var(--bg); color: var(--text-dim); font-weight: 600; }
+.ss-hint { font-size: 12px; color: var(--text-dim); margin-top: 10px; line-height: 1.5; }
+
+/* ---------- 参与均衡检查（按 PK 次数排序 + 条形可视化） ---------- */
+.bal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+.bal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.bal-row.bal-low {
+  background: rgba(232, 91, 91, 0.12);
+  color: var(--danger);
+}
+.bal-name {
+  flex: 0 0 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bal-bar {
+  flex: 1;
+  height: 10px;
+  background: var(--bg);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.bal-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 6px;
+}
+.bal-low .bal-bar-fill { background: var(--danger); }
+.bal-n {
+  flex: 0 0 48px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+@media (max-width: 720px) {
+  .bal-name { flex-basis: 96px; }
+}
+
 /* ---------- 移动端（竖屏窄屏）：两张图上下排，仍在一屏内 ---------- */
 @media (max-width: 720px) {
   .app { padding: calc(12px + var(--safe-top)) 12px calc(12px + var(--safe-bottom)); gap: 12px; }

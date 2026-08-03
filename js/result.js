@@ -48,6 +48,7 @@
         <div class="rank">#${t.rank}</div>
         <div class="name">${fmtName(t.lutId)}</div>
         <div class="score">胜率 ${(t.winrate * 100).toFixed(0)}% ±${(t.ci * 100).toFixed(0)}%</div>
+        <div class="pk" title="该风格参与判断 PK 的次数">PK ${(result.stats[t.lutId] ? result.stats[t.lutId].n : 0)}</div>
       </div>
     `).join('');
 
@@ -58,7 +59,7 @@
       <div class="tier">
         <div class="tier-label">${tierLabels[i] || ('档 ' + (i+1))}（${tier.length}）</div>
         <div class="tier-list">
-          ${tier.map(t => `<span class="tier-chip">${fmtName(t.lutId)} · ${(t.winrate * 100).toFixed(0)}%</span>`).join('')}
+          ${tier.map(t => `<span class="tier-chip">${fmtName(t.lutId)} · ${(t.winrate * 100).toFixed(0)}% · PK ${result.stats[t.lutId] ? result.stats[t.lutId].n : 0}</span>`).join('')}
         </div>
       </div>
     `).join('');
@@ -66,6 +67,77 @@
     // 导出
     document.querySelector('#btn-export-csv').addEventListener('click', () => exportCsv(judgments));
     document.querySelector('#btn-export-json').addEventListener('click', () => exportJson(result, judgments));
+
+    // 样本量 / 95% 置信区间评估
+    renderSampleSize(judgments, lutIds.length);
+
+    // 参与均衡检查（按 PK 次数排序，识别低参与偏差）
+    renderBalance(lutIds, result, fmtName);
+  }
+
+  // 样本量评估模块
+  function renderSampleSize(judgments, lutCount) {
+    const box = document.querySelector('#sample-size');
+    if (!box) return;
+    const s = window.LRT_RANKING.sampleSizeAssessment(judgments, lutCount);
+    const pct = Math.min(100, (s.totalJudgments / s.targetTotal) * 100);
+    const hw = isFinite(s.currentHalfWidth) ? (s.currentHalfWidth * 100).toFixed(1) : '∞';
+    const ciRows = s.ciTargets.map(t => `
+      <tr>
+        <td>±${(t.halfWidth * 100).toFixed(0)}%</td>
+        <td>${t.nPerStyle}</td>
+        <td>${t.totalJudgments}</td>
+      </tr>
+    `).join('');
+
+    box.innerHTML = `
+      <h3>样本量评估（95% 置信区间）</h3>
+      <p class="ss-line">当前总判断数：<b>${s.totalJudgments}</b> 次　|　平均每风格 PK：<b>${s.avgNPerStyle.toFixed(1)}</b> 次</p>
+      <p class="ss-line">当前胜率估计 95% CI 半宽（最坏情况）：<b>±${hw}%</b></p>
+      <div class="ss-progress"><div class="ss-progress-fill" style="width:${pct.toFixed(0)}%"></div></div>
+      <p class="ss-line">达标进度（每风格 ≥ ${s.targetPerStyle} 次 PK，目标总 ${s.targetTotal} 次）：${pct.toFixed(0)}%</p>
+      <table class="ss-table">
+        <thead><tr><th>目标 CI 半宽</th><th>单风格需 PK</th><th>所需总判断数</th></tr></thead>
+        <tbody>${ciRows}</tbody>
+      </table>
+      <p class="ss-hint">说明：每对 PK 同时计入 2 个风格各 1 次，故总判断数 = 单风格目标 × 风格数 ÷ 2。样本越均衡、单风格 PK 越多，排名越稳定。</p>
+    `;
+  }
+
+  // 参与均衡检查：按 PK 次数升序，低参与标红 + 条形可视化
+  function renderBalance(lutIds, result, fmtName) {
+    const box = document.querySelector('#balance-check');
+    if (!box || !result.balance) return;
+    const balance = result.balance;
+    const nOf = id => (result.stats[id] && result.stats[id].n) || 0;
+    const target = balance.targetPerStyle;
+    const maxN = Math.max(1, balance.maxN);
+    // 按 PK 次数升序（参与最少的排最前，便于发现偏差）
+    const sortedByN = lutIds.slice().sort((a, b) => nOf(a) - nOf(b));
+    const rows = sortedByN.map(id => {
+      const n = nOf(id);
+      const ratio = n / maxN;
+      const low = n < target;
+      return `
+        <div class="bal-row ${low ? 'bal-low' : ''}">
+          <span class="bal-name">${fmtName(id)}</span>
+          <span class="bal-bar"><span class="bal-bar-fill" style="width:${(ratio * 100).toFixed(0)}%"></span></span>
+          <span class="bal-n">${n}${low ? ' ⚠' : ''}</span>
+        </div>
+      `;
+    }).join('');
+
+    const cvPct = (balance.cv * 100).toFixed(0);
+    box.innerHTML = `
+      <h3>参与均衡检查（按 PK 次数升序）</h3>
+      <p class="ss-line">参与风格数：<b>${balance.nParticipated}</b> / ${lutIds.length}　|
+        最少 <b>${balance.minN}</b>　最多 <b>${balance.maxN}</b>　平均 <b>${balance.avgN.toFixed(1)}</b>　|
+        变异系数 CV <b>${cvPct}%</b></p>
+      <p class="ss-line">目标每风格 ≥ ${target} 次　|　未达标 ${balance.underTarget.length} 个　|
+        还需约 <b>${balance.extraJudgments}</b> 次判断使全部达标</p>
+      <div class="bal-list">${rows}</div>
+      <p class="ss-hint">⚠ 标红 = 未达目标参与次数，其排名可信度偏低，建议补充该风格的 PK。理想情况下所有风格 PK 次数应一致（CV→0%）。</p>
+    `;
   }
 
   function exportCsv(judgments) {
